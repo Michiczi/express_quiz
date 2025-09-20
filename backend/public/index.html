@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+</head>
+
+<body onload="loadQuestions()">
+    <div id="questionsContainer">
+        <h1 id="timerHandler">Zostało: </h1>
+        <h2 id="pytanie"></h2>
+        <button onclick="checkAnswer(this)" id="odp1" class="question"></button>
+        <button onclick="checkAnswer(this)" id="odp2" class="question"></button>
+        <button onclick="checkAnswer(this)" id="odp3" class="question"></button>
+        <button onclick="checkAnswer(this)" id="odp4" class="question"></button>
+        <button onclick="nextQuestion(++i)">Następne pytanie</button>
+    </div>
+    <div id="resultContainer">
+        <h2>Koniec</h2>
+        <h4 id="result">Wynik: </h4>
+        <button onclick="replay()">Spróbuj ponownie</button>
+    </div>
+    <script>
+        let questionsList;
+        let i = 0;
+        let goodAnwsers = 0;
+        let odpowiedz = ''
+        let timer = 20;
+        let timerInterval;
+        let timerHandler = document.querySelector('#timerHandler');
+        let pytanie = document.querySelector('#pytanie');
+        let questions = document.querySelectorAll('.question');
+        let resultContainer = document.querySelector('#resultContainer');
+        let questionsContainer = document.querySelector('#questionsContainer')
+        let result = document.querySelector('#result');
+        async function loadQuestions() {
+            response = await fetch(`http://localhost:3000/pytania`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                this.questionsList = await response.json();
+                nextQuestion(0);
+            }
+        }
+        function nextQuestion(i) {
+            window.clearInterval(timerInterval);
+            if (i == 20) {
+                resultContainer.style.display = 'block'
+                questionsContainer.style.display = 'none'
+                wynik = 100 * (goodAnwsers / 20).toFixed(2);
+                result.textContent = 'Wynik: ' + wynik + "%";
+            }
+            else {
+                timer = 20;
+                timerHandler.textContent = 'Zostało: ' + timer;
+                timerInterval = setInterval(timerFun, 1000);
+                resultContainer.style.display = 'none'
+                pytanie.textContent = this.questionsList[i].question;
+                questions.forEach((element, index) => {
+                    element.textContent = this.questionsList[i].answers[index];
+                    element.style.backgroundColor = '#F0F0F0'
+                })
+                odpowiedz = this.questionsList[i].correct;
+            }
+
+        }
+        const checkAnswer = (element) => {
+            window.clearInterval(timerInterval);
+            let ifAlreadyChecked = false;
+            questions.forEach((element) => {
+                if (element.style.backgroundColor == 'limegreen' || element.style.backgroundColor == 'tomato') {
+                    ifAlreadyChecked = true
+                    return;
+                }
+            });
+            if (ifAlreadyChecked) {
+                return;
+            }
+            else {
+                if (element.textContent == odpowiedz) {
+                    console.log("Dobrze");
+                    element.style.backgroundColor = 'lime';
+                    goodAnwsers++;
+                }
+                else {
+                    console.log("Zła odpowiedź, poprawna to: " + odpowiedz);
+                    element.style.backgroundColor = 'tomato';
+                    questions.forEach((element) => {
+                        if (element.textContent == odpowiedz) {
+                            element.style.backgroundColor = 'limegreen'
+                        }
+                    });
+                }
+            }
+        }
+        const replay = () => {
+            i = 0;
+            goodAnwsers = 0;
+            resultContainer.style.display = 'none'
+            questionsContainer.style.display = 'block'
+            nextQuestion(i);
+        }
+        const timerFun = () => {
+            if (timer == 0) {
+                console.log("Zła odpowiedź, poprawna to: " + odpowiedz);
+                nextQuestion(++i);
+            }
+            timer--;
+            timerHandler.textContent = 'Zostało: ' + timer;
+        }
+
+    </script>
+</body>
+
+</html>
